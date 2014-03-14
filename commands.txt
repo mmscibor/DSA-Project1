@@ -1,0 +1,6 @@
+create i1 queue
+create i1 queue
+create i1 stack
+create s99 stack
+push i1 50
+pop i2

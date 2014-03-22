@@ -169,7 +169,7 @@ std::list<SimpleList<std::string> *> stringList;
 
 // Function prototypes
 void parseString(std::string parseable);
-void execute(std::string command);
+void execute();
 
 template <class T>
 bool listContains(std::list<SimpleList<T> *> searchable, std::string name);
@@ -194,6 +194,7 @@ int main() {
     if (inputFile.is_open()) {
         while (getline(inputFile, fileLine)) {
             parseString(fileLine); 
+            execute();
         }
         inputFile.close(); // Close filestream after done reading / writing
         outputFile.close();
@@ -203,7 +204,7 @@ int main() {
 }
 
 
-void parseString(std::string fileLine) {
+void parseString(std::string parseable) {
     /* This method parses one line of input from the .txt file at a time.
      * arguments[0] is the COMMAND to be executed.
      * arguments[1] is the VARIABLE NAME to be created or utilized.
@@ -229,4 +230,14 @@ void parseString(std::string fileLine) {
 
         arguments[3] = arguments[1].at(0);
     }
+}
+
+void execute() {
+    if (arguments[0].compare(CREATE) == 0) {
+        
+    }
+}
+
+bool listContains(std::list<SimpleList<T> *> searchable, std::string name) {
+    for (std::
 }

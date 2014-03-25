@@ -7,6 +7,7 @@
 #include <fstream>
 #include <list>
 #include <string>
+#include <stdlib.h>
 
 #define CREATE "create"
 #define PUSH "push"
@@ -66,13 +67,9 @@ class SimpleList {
             (* tailNode).setPreviousNode(headNode);
         }
 
-        std::string getName() {
-            return listName;
-        }
+        virtual void pop() = 0;
 
-    protected:
-        // Insert a new Node at the end of SimpleList.
-        void insert(T element) {
+        void push(T element) {
             Node * updatedTail = new Node();
             (* tailNode).setValue(element);
             (* tailNode).setNextNode(updatedTail);
@@ -80,24 +77,31 @@ class SimpleList {
             tailNode = updatedTail;
         }
 
-        T removeLast() {
+        std::string getName() {
+            return listName;
+        }
+
+    protected:
+        // Insert a new Node at the end of SimpleList.
+
+        void removeLast() {
             Node * toRemove = (* tailNode).getPreviousNode();
             Node * newLast = (* toRemove).getPreviousNode();
             (* tailNode).setPreviousNode(newLast);
             (* newLast).setNextNode(tailNode);
             T removedValue = (* toRemove).getValue();
             delete toRemove;
-            return removedValue;
+            outputFile << "Value popped: " << removedValue << std::endl;
         }
 
-        T removeFirst() {
+        void removeFirst() {
             Node * toRemove = (* headNode).getNextNode();
             Node * newFirst = (* toRemove).getNextNode();
             (* headNode).setNextNode(newFirst);
             (* newFirst).setPreviousNode(headNode);
             T removedValue = (* toRemove).getValue();
             delete toRemove;
-            return removedValue;
+            outputFile << "Value popped: " << removedValue << std::endl;
         }
 
         bool isEmpty() {
@@ -121,16 +125,11 @@ class Queue : public SimpleList<T> {
             return returnStoredValue;
         }
 
-        void push(T element) {
-            insert(element);
-        }
-
         void pop() {
             if (this->isEmpty()) {
                 outputFile << "ERROR: This list is empty!\n";
             } else {
-                returnValue = this->removeFirst();
-                returnStoredValue();
+                this->removeFirst();
             }
         }
 };
@@ -148,16 +147,11 @@ class Stack : public SimpleList<T> {
             return returnStoredValue;
         }
 
-        void push(T element) {
-            insert(element);
-        }
-
         void pop() {
             if (this->isEmpty()) {
                 outputFile << "ERROR: This list is empty!\n";
             } else {
-                returnValue = this->removeLast();
-                returnStoredValue();
+                this->removeLast();
             }
         }
 };
@@ -193,7 +187,13 @@ int main() {
     // Iterate through the lines of the file
     if (inputFile.is_open()) {
         while (getline(inputFile, fileLine)) {
-            parseString(fileLine); 
+            std::cout << "File line: " << fileLine << std::endl;
+            parseString(fileLine);
+            if (arguments[0].compare(POP) == 0) {
+                outputFile << "PROCESSING COMMAND: " << arguments[0] << " " << arguments[1] << std::endl;
+            } else {
+                outputFile << "PROCESSING COMMAND: " << arguments[0] << " " << arguments[1] << " " << arguments[2] << std::endl;
+            }
             execute();
         }
         inputFile.close(); // Close filestream after done reading / writing
@@ -203,7 +203,6 @@ int main() {
     return 0;
 }
 
-
 void parseString(std::string parseable) {
     /* This method parses one line of input from the .txt file at a time.
      * arguments[0] is the COMMAND to be executed.
@@ -212,32 +211,155 @@ void parseString(std::string parseable) {
      * arguments[3] is the first letter of the VARIABLE NAME: i, d, or s.
      * Notice arguments[] is a Global Variable that is only updated here. */
 
-    for (int i = 0, spaceHolder = 0; i < parseable.length(); i++) {
-        if (isspace(parseable.at(i)) && spaceHolder == 0) {
-            arguments[0] = parseable.substr(0, i);
-            spaceHolder = i;
-        }
+    int spaceHolder = 0;
 
-        if (isspace(parseable.at(i)) && spaceHolder != 0) {
-            if (arguments[0].compare(POP) == 0) {
-                arguments[1] = parseable.substr(spaceHolder);
-                arguments[2] = "";
-            } else {
-                arguments[1] = parseable.substr(spaceHolder, (i-spaceHolder));
-                arguments[2] = parseable.substr(i);
-            }
-        }
-
-        arguments[3] = arguments[1].at(0);
+    if (parseable.substr(0, 3).compare(POP) == 0) {
+        arguments[0] = POP;
+        spaceHolder = 4;
+    } else if (parseable.substr(0, 4).compare(PUSH) == 0) {
+        arguments[0] = PUSH;
+        spaceHolder = 5;
+    } else if (parseable.substr(0, 6).compare(CREATE) == 0) {
+        arguments[0] = CREATE;
+        spaceHolder = 7;
     }
+
+    int secSpaceHolder = spaceHolder;
+    if (!(arguments[0].compare(POP) == 0)) {
+        while (parseable.at(secSpaceHolder) != ' ') {
+            secSpaceHolder++;
+        }
+        arguments[1] = parseable.substr(spaceHolder, secSpaceHolder - spaceHolder);
+        arguments[2] = parseable.substr(secSpaceHolder + 1);
+    } else {
+        arguments[1] = parseable.substr(spaceHolder);
+    }
+
+    std::cout << "Argument 0: " << arguments[0] << std::endl;
+    std::cout << "Argument 1: " << arguments[1] << std::endl;
+    std::cout << "Argument 2: " << arguments[2] << std::endl;
+
+    arguments[3] = parseable.at(spaceHolder);
 }
 
 void execute() {
-    if (arguments[0].compare(CREATE) == 0) {
-        
+    bool listContains = false;
+
+    if (arguments[3].compare("s") == 0) {
+        std::list<SimpleList<std::string> *>::iterator iterator; 
+        for (iterator = stringList.begin(); iterator != stringList.end(); iterator++) {
+            if ((* iterator)->getName().compare(arguments[1]) == 0) {
+                listContains = true;
+                break;
+            }
+        }
+
+        if (arguments[0].compare(CREATE) == 0) {
+            if (!listContains) {
+                SimpleList<std::string> * newSimpleList;
+                if (arguments[2].compare("queue") == 0) {
+                    newSimpleList = new Queue <std::string> (arguments[1]);
+                } else {
+                    newSimpleList = new Stack <std::string> (arguments[1]);
+                }
+                stringList.push_front(newSimpleList);
+            } else {
+                outputFile << "ERROR: This name already exists!" << std::endl;
+            }
+        } else if (arguments[0].compare(POP) == 0) {
+            if (listContains) {
+                (* iterator)->pop();
+            } else {
+                outputFile << "ERROR: This name does not exist!" << std::endl;
+            }
+        } else if (arguments[0].compare(PUSH) == 0) {
+            if (listContains) {
+                (* iterator)->push(arguments[2]);
+            } else {
+                outputFile << "ERROR: This name does not exist!" << std::endl;
+            }
+        }
+    }
+    
+    if (arguments[3].compare("d") == 0) {
+        std::list<SimpleList<double> *>::iterator iterator; 
+        for (iterator = doubleList.begin(); iterator != doubleList.end(); iterator++) {
+            if ((* iterator)->getName().compare(arguments[1]) == 0) {
+                listContains = true;
+                break;
+            }
+        }
+
+        if (arguments[0].compare(CREATE) == 0) {
+            if (!listContains) {
+                SimpleList<double> * newSimpleList;
+                if (arguments[2].compare("queue") == 0) {
+                    newSimpleList = new Queue <double> (arguments[1]);
+                } else {
+                    newSimpleList = new Stack <double> (arguments[1]);
+                }
+                doubleList.push_front(newSimpleList);
+            } else {
+                outputFile << "ERROR: This name already exists!" << std::endl;
+            }
+        } else if (arguments[0].compare(POP) == 0) {
+            if (listContains) {
+                (* iterator)->pop();
+            } else {
+                outputFile << "ERROR: This name does not exist!" << std::endl;
+            }
+        } else if (arguments[0].compare(PUSH) == 0) {
+            if (listContains) {
+                (* iterator)->push(atof(arguments[2].c_str()));
+            } else {
+                outputFile << "ERROR: This name does not exist!" << std::endl;
+            }
+        }
+    }
+    
+    if (arguments[3].compare("i") == 0) {
+        std::list<SimpleList<int> *>::iterator iterator; 
+        for (iterator = intList.begin(); iterator != intList.end(); iterator++) {
+            if ((* iterator)->getName().compare(arguments[1]) == 0) {
+                listContains = true;
+                break;
+            }
+        }
+
+        if (arguments[0].compare(CREATE) == 0) {
+            if (!listContains) {
+                SimpleList<int> * newSimpleList;
+                if (arguments[2].compare("queue") == 0) {
+                    newSimpleList = new Queue <int> (arguments[1]);
+                } else {
+                    newSimpleList = new Stack <int> (arguments[1]);
+                }
+                intList.push_front(newSimpleList);
+            } else {
+                outputFile << "ERROR: This name already exists!" << std::endl;
+            }
+        } else if (arguments[0].compare(POP) == 0) {
+            if (listContains) {
+                (* iterator)->pop();
+            } else {
+                outputFile << "ERROR: This name does not exist!" << std::endl;
+            }
+        } else if (arguments[0].compare(PUSH) == 0) {
+            if (listContains) {
+                (* iterator)->push(atoi(arguments[2].c_str()));
+            } else {
+                outputFile << "ERROR: This name does not exist!" << std::endl;
+            }
+        }
     }
 }
 
+template <class T>
 bool listContains(std::list<SimpleList<T> *> searchable, std::string name) {
-    for (std::
+    for (typename std::list<SimpleList<T> *>::iterator iterator = searchable.begin(); iterator != searchable.end(); iterator++) {
+        if ((* iterator)->getName().compare(name) == 0) {
+            return true;
+        }
+    }
+    return false;
 }

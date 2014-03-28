@@ -225,8 +225,10 @@ void parseString(std::string parseable) {
 void execute(std::ofstream & outputFile) {
     bool listContains = false;
 
+    // Basically same code repeated 3 times, once for std::string, double, and int
     if (arguments[3].compare("s") == 0) {
         std::list<SimpleList<std::string> *>::iterator iterator; 
+        // Check if the name is in use
         for (iterator = stringList.begin(); iterator != stringList.end(); iterator++) {
             if ((* iterator)->getName().compare(arguments[1]) == 0) {
                 listContains = true;
@@ -234,6 +236,7 @@ void execute(std::ofstream & outputFile) {
             }
         }
 
+        // If name is not in use, we can CREATE an object with this name
         if (arguments[0].compare(CREATE) == 0) {
             if (!listContains) {
                 SimpleList<std::string> * newSimpleList;
@@ -247,7 +250,9 @@ void execute(std::ofstream & outputFile) {
                 outputFile << "ERROR: This name already exists!" << std::endl;
             }
         } else if (arguments[0].compare(POP) == 0) {
+            // If name is in use, execute proper command, push or pop
             if (listContains) {
+                // Exception handler, can not pop if list is empty
                 if ((* iterator)->isEmpty()) {
                     outputFile << "ERROR: This list is empty!" << std::endl;
                 } else {

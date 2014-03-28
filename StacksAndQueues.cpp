@@ -20,7 +20,6 @@
 // of the list is not necessary.
 
 std::string arguments[4]; // Use this when parseing commands from .txt file
-std::ofstream outputFile; // Use this stream to write to file throughout the code
 
 template <class T>
 class SimpleList {
@@ -67,8 +66,10 @@ class SimpleList {
             (* tailNode).setPreviousNode(headNode);
         }
 
-        virtual void pop() = 0;
+        // Virtual function, to be used by Stack and Queue
+        virtual T pop() = 0;
 
+        // Conveniently the same for both Stack and Queue
         void push(T element) {
             Node * updatedTail = new Node();
             (* tailNode).setValue(element);
@@ -81,78 +82,56 @@ class SimpleList {
             return listName;
         }
 
-    protected:
-        // Insert a new Node at the end of SimpleList.
-
-        void removeLast() {
-            Node * toRemove = (* tailNode).getPreviousNode();
-            Node * newLast = (* toRemove).getPreviousNode();
-            (* tailNode).setPreviousNode(newLast);
-            (* newLast).setNextNode(tailNode);
-            T removedValue = (* toRemove).getValue();
-            delete toRemove;
-            outputFile << "Value popped: " << removedValue << std::endl;
-        }
-
-        void removeFirst() {
-            Node * toRemove = (* headNode).getNextNode();
-            Node * newFirst = (* toRemove).getNextNode();
-            (* headNode).setNextNode(newFirst);
-            (* newFirst).setPreviousNode(headNode);
-            T removedValue = (* toRemove).getValue();
-            delete toRemove;
-            outputFile << "Value popped: " << removedValue << std::endl;
-        }
-
+        // Check if list is empty
         bool isEmpty() {
             if ((* headNode).getNextNode() == tailNode) {
                 return true;
             }
             return false;
         }
+
+    protected:
+        // Protected methods, these are the two pop() methods that differ in Stack and Queue
+        T removeLast() {
+            Node * toRemove = (* tailNode).getPreviousNode();
+            Node * newLast = (* toRemove).getPreviousNode();
+            (* tailNode).setPreviousNode(newLast);
+            (* newLast).setNextNode(tailNode);
+            T removedValue = (* toRemove).getValue();
+            delete toRemove;
+            return removedValue;
+        }
+
+        T removeFirst() {
+            Node * toRemove = (* headNode).getNextNode();
+            Node * newFirst = (* toRemove).getNextNode();
+            (* headNode).setNextNode(newFirst);
+            (* newFirst).setPreviousNode(headNode);
+            T removedValue = (* toRemove).getValue();
+            delete toRemove;
+            return removedValue;
+        }
 };
 
 template <class T>
 class Queue : public SimpleList<T> {
-    private:
-        T returnValue;
-
     public:
         // Queue constructor, instantiate with name for queue.
         Queue (std::string queueName) : SimpleList<T>(queueName) {}
 
-        T returnStoredValue() {
-            return returnStoredValue;
-        }
-
-        void pop() {
-            if (this->isEmpty()) {
-                outputFile << "ERROR: This list is empty!\n";
-            } else {
-                this->removeFirst();
-            }
+        T pop() {
+            return this->removeFirst();
         }
 };
 
 template <class T>
 class Stack : public SimpleList<T> {
-    private:
-        T returnValue;
-
     public:
-        // Queue constructor, instantiate with name for queue.
+        // Stack constructor, instantiate with name for queue.
         Stack (std::string queueName) : SimpleList<T>(queueName) {}
 
-        T returnStoredValue() {
-            return returnStoredValue;
-        }
-
-        void pop() {
-            if (this->isEmpty()) {
-                outputFile << "ERROR: This list is empty!\n";
-            } else {
-                this->removeLast();
-            }
+        T pop() {
+            return this->removeLast();
         }
 };
 
@@ -163,7 +142,7 @@ std::list<SimpleList<std::string> *> stringList;
 
 // Function prototypes
 void parseString(std::string parseable);
-void execute();
+void execute(std::ofstream & outputFile);
 
 template <class T>
 bool listContains(std::list<SimpleList<T> *> searchable, std::string name);
@@ -182,6 +161,7 @@ int main() {
 
     // Open file streams for reading / writing from / to file
     std::ifstream inputFile (inputDirectory.c_str());
+    std::ofstream outputFile;
     outputFile.open(outputDirectory.c_str());
 
     // Iterate through the lines of the file
@@ -194,7 +174,7 @@ int main() {
             } else {
                 outputFile << "PROCESSING COMMAND: " << arguments[0] << " " << arguments[1] << " " << arguments[2] << std::endl;
             }
-            execute();
+            execute(outputFile);
         }
         inputFile.close(); // Close filestream after done reading / writing
         outputFile.close();
@@ -242,7 +222,7 @@ void parseString(std::string parseable) {
     arguments[3] = parseable.at(spaceHolder);
 }
 
-void execute() {
+void execute(std::ofstream & outputFile) {
     bool listContains = false;
 
     if (arguments[3].compare("s") == 0) {
@@ -268,7 +248,12 @@ void execute() {
             }
         } else if (arguments[0].compare(POP) == 0) {
             if (listContains) {
-                (* iterator)->pop();
+                if ((* iterator)->isEmpty()) {
+                    outputFile << "ERROR: This list is empty!" << std::endl;
+                } else {
+                    std::string popped = (* iterator)->pop();
+                    outputFile << "Value popped: " << popped << std::endl;
+                }
             } else {
                 outputFile << "ERROR: This name does not exist!" << std::endl;
             }
@@ -304,7 +289,12 @@ void execute() {
             }
         } else if (arguments[0].compare(POP) == 0) {
             if (listContains) {
-                (* iterator)->pop();
+                if ((* iterator)->isEmpty()) {
+                    outputFile << "ERROR: This list is empty!" << std::endl;
+                } else {
+                    double popped = (* iterator)->pop();
+                    outputFile << "Value popped: " << popped << std::endl;
+                }
             } else {
                 outputFile << "ERROR: This name does not exist!" << std::endl;
             }
@@ -340,7 +330,12 @@ void execute() {
             }
         } else if (arguments[0].compare(POP) == 0) {
             if (listContains) {
-                (* iterator)->pop();
+                if ((* iterator)->isEmpty()) {
+                    outputFile << "ERROR: This list is empty!" << std::endl;
+                } else {
+                    int popped = (* iterator)->pop();
+                    outputFile << "Value popped: " << popped << std::endl;
+                }
             } else {
                 outputFile << "ERROR: This name does not exist!" << std::endl;
             }

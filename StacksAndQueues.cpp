@@ -167,7 +167,6 @@ int main() {
     // Iterate through the lines of the file
     if (inputFile.is_open()) {
         while (getline(inputFile, fileLine)) {
-            std::cout << "File line: " << fileLine << std::endl;
             parseString(fileLine);
             if (arguments[0].compare(POP) == 0) {
                 outputFile << "PROCESSING COMMAND: " << arguments[0] << " " << arguments[1] << std::endl;
@@ -214,10 +213,6 @@ void parseString(std::string parseable) {
     } else {
         arguments[1] = parseable.substr(spaceHolder);
     }
-
-    std::cout << "Argument 0: " << arguments[0] << std::endl;
-    std::cout << "Argument 1: " << arguments[1] << std::endl;
-    std::cout << "Argument 2: " << arguments[2] << std::endl;
 
     arguments[3] = parseable.at(spaceHolder);
 }
